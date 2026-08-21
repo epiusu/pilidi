@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ILDB - Linux Dağıtımları Açık Veri Haritası</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Poppins:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Inter:wght@300;400;500;600;700&family=Ubuntu:ital,wght@0,300;0,400;0,500;0,700;1,400&family=JetBrains+Mono:wght@300;400&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=block" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+<style>
+  :root {
+    --void: #020408;
+    --deep: #050d18;
+    --panel: rgba(8,20,40,0.85);
+    --panel-border: rgba(0,180,255,0.15);
+    --accent: #00b4ff;
+    --accent2: #7c3aed;
+    --accent3: #10b981;
+    --warn: #f59e0b;
+    --text: #c8dff0;
+    --text-dim: #5a7a99;
+    --grid: rgba(0,180,255,0.04);
+    --glow: 0 0 20px rgba(0,180,255,0.3);
+    --font-display:  'Orbitron', monospace;
+    --font-body:     'Poppins', sans-serif;
+    --font-ui:       'Inter', sans-serif;
+    --font-system:   'Ubuntu', sans-serif;
+    --font-mono:     'JetBrains Mono', monospace;
+  }
+
+  .material-symbols-outlined {
+    font-family: 'Material Symbols Outlined', sans-serif;
+    font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' -25, 'opsz' 20;
+    font-size: inherit; vertical-align: middle; line-height: 1;
+    display: inline-block; user-select: none; letter-spacing: normal;
+    word-wrap: normal; white-space: nowrap; direction: ltr;
+  }
+  .ms-fill { font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+  .distro-icon [class*="fa-"] { line-height: 1; }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body { font-family: var(--font-body); background: var(--void); color: var(--text); min-height: 100vh; overflow-x: hidden; position: relative; }
+
+  #bg-canvas { position: fixed; inset: 0; z-index: 0; pointer-events: none; }
+  .content-wrap { position: relative; z-index: 10; }
+
+  /* HEADER */
+  header { position: sticky; top: 0; z-index: 100; backdrop-filter: blur(20px) saturate(180%); background: rgba(2,6,15,0.92); border-bottom: 1px solid var(--panel-border); box-shadow: 0 2px 40px rgba(0,0,0,0.6); }
+  .nav-inner { max-width: 1400px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; padding: 0 24px; height: 64px; gap: 16px; }
+  .logo { display: flex; align-items: center; gap: 12px; text-decoration: none; flex-shrink: 0; }
+  .logo-icon { width: 38px; height: 38px; position: relative; }
+  .logo-icon svg { width: 100%; height: 100%; }
+  .logo-text { font-family: 'Orbitron', monospace; font-size: 1.05rem; font-weight: 700; letter-spacing: 2px; color: var(--accent); text-shadow: 0 0 20px rgba(0,180,255,0.5); line-height: 1; }
+  .logo-sub { font-family: var(--font-body); font-size: 0.6rem; letter-spacing: 4px; color: var(--text-dim); text-transform: uppercase; }
+  nav { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  nav a { font-family: var(--font-body); font-size: 0.8rem; letter-spacing: 1.5px; text-transform: uppercase; color: var(--text-dim); text-decoration: none; padding: 6px 12px; border-radius: 4px; border: 1px solid transparent; transition: all 0.3s; white-space: nowrap; }
+  nav a:hover { color: var(--accent); border-color: var(--panel-border); background: rgba(0,180,255,0.06); text-shadow: 0 0 10px rgba(0,180,255,0.4); }
+  .nav-badge { font-family: 'JetBrains Mono', monospace; font-size: 0.68rem; background: rgba(0,180,255,0.1); border: 1px solid rgba(0,180,255,0.3); color: var(--accent); padding: 4px 10px; border-radius: 20px; white-space: nowrap; }
+
+  /* KERNEL BAR */
+  .kernel-bar { background: linear-gradient(135deg, rgba(0,180,255,0.08) 0%, rgba(124,58,237,0.08) 100%); border-bottom: 1px solid rgba(0,180,255,0.1); padding: 12px 24px; }
+  .kernel-bar-inner { max-width: 1400px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+  .kernel-title { font-family: 'Orbitron', monospace; font-size: 0.65rem; letter-spacing: 3px; color: var(--text-dim); text-transform: uppercase; }
+  .kernel-versions { display: flex; gap: 12px; flex-wrap: wrap; }
+  .kv { display: flex; align-items: center; gap: 8px; background: rgba(0,0,0,0.3); border: 1px solid; border-radius: 6px; padding: 5px 12px; font-family: var(--font-mono); font-size: 0.75rem; }
+  .kv.stable { border-color: rgba(16,185,129,0.4); }
+  .kv.lts { border-color: rgba(0,180,255,0.4); }
+  .kv.mainline { border-color: rgba(245,158,11,0.4); }
+  .kv-dot { width: 7px; height: 7px; border-radius: 50%; animation: pulse 2s infinite; }
+  .stable .kv-dot { background: var(--accent3); box-shadow: 0 0 6px var(--accent3); }
+  .lts .kv-dot { background: var(--accent); box-shadow: 0 0 6px var(--accent); }
+  .mainline .kv-dot { background: var(--warn); box-shadow: 0 0 6px var(--warn); }
+  .kv-label { font-family: var(--font-ui); color: var(--text-dim); font-size: 0.6rem; font-weight: 700; letter-spacing: 1.5px; }
+  .kv-ver { color: var(--text); font-weight: 400; }
+  .kv-date { font-family: var(--font-ui); color: var(--text-dim); font-size: 0.6rem; }
+  .kernel-update { display: flex; align-items: center; gap: 8px; font-family: var(--font-ui); font-size: 0.7rem; color: var(--text-dim); }
+  .live-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent3); box-shadow: 0 0 8px var(--accent3); animation: pulse 1.5s infinite; }
+  @keyframes spin { from { transform: rotate(0deg);} to { transform: rotate(360deg);} }
+  @keyframes pulse { 0%,100% { opacity:1; transform:scale(1);} 50% { opacity:.6; transform:scale(.85);} }
+  .krefresh { background: none; border: 1px solid rgba(0,180,255,.3); color: var(--accent); border-radius: 6px; width: 28px; height: 28px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; transition: .2s; }
+  .krefresh:hover { background: rgba(0,180,255,.12); }
+  .krefresh.spinning i { animation: spin 1s linear infinite; }
+
+  /* HERO */
+  .hero { padding: 60px 24px 40px; max-width: 1400px; margin: 0 auto; text-align: center; }
+  .hero-tag { display: inline-flex; align-items: center; gap: 8px; font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; letter-spacing: 3px; color: var(--accent); text-transform: uppercase; margin-bottom: 20px; padding: 6px 16px; border: 1px solid rgba(0,180,255,0.3); border-radius: 20px; background: rgba(0,180,255,0.05); }
+  .hero h1 { font-family: 'Orbitron', monospace; font-size: clamp(1.8rem, 5vw, 3.5rem); font-weight: 900; line-height: 1.1; margin-bottom: 16px; background: linear-gradient(135deg, #ffffff 0%, var(--accent) 50%, var(--accent2) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; letter-spacing: 2px; }
+  .hero p { font-size: 1rem; color: var(--text-dim); max-width: 600px; margin: 0 auto 32px; line-height: 1.7; letter-spacing: 0.5px; }
+  .hero-stats { display: flex; justify-content: center; gap: 32px; flex-wrap: wrap; margin-bottom: 40px; }
+  .stat { text-align: center; }
+  .stat-num { font-family: 'Orbitron', monospace; font-size: 2rem; font-weight: 700; color: var(--accent); text-shadow: 0 0 20px rgba(0,180,255,0.4); display: block; }
+  .stat-label { font-size: 0.72rem; letter-spacing: 2px; color: var(--text-dim); text-transform: uppercase; }
+
+  /* FILTER BAR */
+  .filter-bar { max-width: 1400px; margin: 0 auto 24px; padding: 0 24px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .filter-label { font-size: 0.72rem; letter-spacing: 2px; color: var(--text-dim); text-transform: uppercase; flex-shrink: 0; }
+  .filter-btns { display: flex; gap: 8px; flex-wrap: wrap; }
+  .fbtn { font-family: var(--font-ui); font-size: 0.75rem; font-weight: 600; letter-spacing: 0.8px; text-transform: uppercase; color: var(--text-dim); background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); padding: 5px 14px; border-radius: 4px; cursor: pointer; transition: all 0.25s; }
+  .fbtn:hover, .fbtn.active { color: var(--accent); border-color: rgba(0,180,255,0.4); background: rgba(0,180,255,0.08); text-shadow: 0 0 8px rgba(0,180,255,0.4); }
+  .search-box { margin-left: auto; position: relative; display: flex; align-items: center; }
+  .search-box input { font-family: var(--font-ui); font-size: 0.78rem; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); color: var(--text); padding: 7px 52px 7px 14px; border-radius: 6px; outline: none; width: 220px; transition: all 0.3s; }
+  .search-box input:focus { border-color: rgba(0,180,255,0.4); background: rgba(0,180,255,0.05); box-shadow: 0 0 0 2px rgba(0,180,255,0.1); width: 280px; }
+  .search-box input::placeholder { color: var(--text-dim); }
+  .search-icon { position: absolute; right: 10px; color: var(--text-dim); font-size: 0.8rem; pointer-events: none; }
+  .search-clear { position: absolute; right: 28px; background: none; border: 0; color: var(--text-dim); cursor: pointer; font-size: 0.9rem; display: none; padding: 2px; line-height: 1; }
+  .search-clear:hover { color: var(--accent); }
+
+  /* TABLE */
+  .table-wrap { max-width: 1400px; margin: 0 auto; padding: 0 24px 60px; }
+  .table-glass { background: var(--panel); border: 1px solid var(--panel-border); border-radius: 12px; overflow: hidden; backdrop-filter: blur(20px); box-shadow: 0 8px 60px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.05); }
+  .table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  table { width: 100%; border-collapse: collapse; min-width: 920px; }
+  thead { background: linear-gradient(135deg, rgba(0,180,255,0.12) 0%, rgba(124,58,237,0.08) 100%); border-bottom: 1px solid rgba(0,180,255,0.2); }
+  th { font-family: var(--font-ui); font-size: 0.65rem; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: var(--accent); padding: 16px 14px; text-align: left; white-space: nowrap; }
+  th:first-child { padding-left: 24px; }
+  th:last-child { padding-right: 24px; }
+  th.sortable { cursor: pointer; user-select: none; }
+  th.sortable:hover { text-shadow: 0 0 8px rgba(0,180,255,.5); }
+  th.sortable::after { content: "\2195"; opacity: .3; margin-left: 6px; font-size: .75rem; }
+  th.sorted-asc::after { content: "\25B2"; opacity: 1; }
+  th.sorted-desc::after { content: "\25BC"; opacity: 1; }
+  tbody tr { border-bottom: 1px solid rgba(255,255,255,0.04); transition: all 0.2s; cursor: default; }
+  tbody tr:last-child { border-bottom: none; }
+  tbody tr:hover { background: rgba(0,180,255,0.05); border-bottom-color: rgba(0,180,255,0.1); }
+  td { padding: 14px 14px; font-size: 0.88rem; vertical-align: middle; }
+  td:first-child { padding-left: 24px; }
+  td:last-child { padding-right: 24px; }
+  .distro-cell { display: flex; align-items: center; gap: 10px; }
+  .distro-icon { width: 30px; height: 30px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 1rem; flex-shrink: 0; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08); }
+  .distro-name { font-family: var(--font-system); font-size: 0.92rem; font-weight: 500; color: #fff; letter-spacing: 0.3px; display: block; line-height: 1.2; }
+  .distro-name a { color: inherit; text-decoration: none; transition: color 0.2s; }
+  .distro-name a:hover { color: var(--accent); }
+  .distro-type { font-family: var(--font-ui); font-size: 0.58rem; font-weight: 500; letter-spacing: 1px; text-transform: uppercase; }
+  .type-independent { color: #a78bfa; }
+  .type-debian { color: #e879f9; }
+  .type-arch { color: #38bdf8; }
+  .type-rpm { color: #fb923c; }
+  .type-rhel { color: #f87171; }
+  .type-suse { color: #4ade80; }
+  .type-gentoo { color: #facc15; }
+  .type-lfs { color: #94a3b8; }
+  .tag { display: inline-block; font-family: var(--font-ui); font-size: 0.62rem; font-weight: 500; padding: 2px 7px; border-radius: 3px; margin: 1px; white-space: nowrap; }
+  .tag-de { background: rgba(0,180,255,0.1); border: 1px solid rgba(0,180,255,0.25); color: #7dd3fc; }
+  .tag-pkg { background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.25); color: #6ee7b7; }
+  .tag-kernel { font-family: var(--font-mono); font-size: 0.72rem; color: var(--warn); white-space: nowrap; }
+  .version-num { font-family: var(--font-mono); font-size: 0.78rem; color: var(--accent3); display: block; font-weight: 400; }
+  .version-name { font-family: var(--font-ui); font-size: 0.72rem; font-weight: 400; color: var(--text-dim); font-style: italic; }
+  .date-cell { font-family: var(--font-mono); font-size: 0.72rem; color: var(--text-dim); white-space: nowrap; }
+  .rolling { font-family: var(--font-ui); font-size: 0.7rem; font-weight: 600; letter-spacing: 1.5px; color: var(--warn); text-transform: uppercase; background: rgba(245,158,11,0.1); border: 1px solid rgba(245,158,11,0.3); border-radius: 3px; padding: 1px 6px; }
+  .cell-sub { display: block; font: 400 0.63rem/1.5 var(--font-ui); color: var(--text-dim); margin-top: 3px; letter-spacing: .3px; }
+  .days-ago { display: block; font: 400 0.6rem/1.5 var(--font-ui); color: var(--text-dim); margin-top: 2px; }
+  .auto-dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: #34d399; box-shadow: 0 0 6px #34d399; margin-right: 6px; vertical-align: 2px; animation: pulse 2s infinite; }
+  .fresh { display: inline-block; font: 600 0.56rem/1 var(--font-ui); letter-spacing: .8px; text-transform: uppercase; padding: 2px 6px; border-radius: 3px; margin-left: 6px; vertical-align: 1px; }
+  .fresh-ok   { color: #34d399; border: 1px solid rgba(52,211,153,.35);  background: rgba(52,211,153,.08); }
+  .fresh-mid  { color: #fbbf24; border: 1px solid rgba(251,191,36,.35);  background: rgba(251,191,36,.08); }
+  .fresh-old  { color: #f87171; border: 1px solid rgba(248,113,113,.35); background: rgba(248,113,113,.08); }
+  .fresh-roll { color: #22d3ee; border: 1px solid rgba(34,211,238,.35);  background: rgba(34,211,238,.08); }
+
+  .section-header { display: flex; align-items: center; gap: 12px; padding: 18px 24px 14px; border-bottom: 1px solid rgba(255,255,255,0.05); background: linear-gradient(90deg, rgba(0,180,255,0.03) 0%, transparent 100%); }
+  .section-header h2 { font-family: 'Orbitron', monospace; font-size: 0.72rem; letter-spacing: 3px; color: var(--text-dim); text-transform: uppercase; font-weight: 600; }
+  .section-line { flex: 1; height: 1px; background: linear-gradient(90deg, rgba(0,180,255,0.2), transparent); }
+  .row-count { font-family: 'JetBrains Mono', monospace; font-size: 0.65rem; color: var(--text-dim); padding: 3px 8px; border: 1px solid rgba(255,255,255,0.08); border-radius: 3px; }
+
+  footer { border-top: 1px solid var(--panel-border); background: rgba(2,6,15,0.8); backdrop-filter: blur(20px); padding: 32px 24px; text-align: center; }
+  .footer-inner { max-width: 1400px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px; }
+  .footer-text { font-family: 'JetBrains Mono', monospace; font-size: 0.68rem; color: var(--text-dim); letter-spacing: 1px; max-width: 640px; text-align: left; }
+  .footer-links { display: flex; gap: 16px; flex-wrap: wrap; }
+  .footer-links a { font-size: 0.72rem; color: var(--text-dim); text-decoration: none; letter-spacing: 1px; transition: color 0.2s; }
+  .footer-links a:hover { color: var(--accent); }
+
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: var(--void); }
+  ::-webkit-scrollbar-thumb { background: rgba(0,180,255,0.3); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: rgba(0,180,255,0.6); }
+
+  .hamburger { display: none; flex-direction: column; gap: 5px; cursor: pointer; padding: 4px; background: none; border: none; }
+  .hamburger span { display: block; width: 22px; height: 2px; background: var(--text-dim); border-radius: 1px; transition: all 0.3s; }
+  .mobile-nav { display: none; flex-direction: column; padding: 12px 24px 16px; border-top: 1px solid var(--panel-border); background: rgba(2,6,15,0.97); gap: 4px; }
+  .mobile-nav.open { display: flex; }
+  .mobile-nav a { font-family: var(--font-body); font-size: 0.85rem; letter-spacing: 2px; text-transform: uppercase; color: var(--text-dim); text-decoration: none; padding: 8px 4px; border-bottom: 1px solid rgba(255,255,255,0.04); transition: color 0.2s; }
+  .mobile-nav a:hover { color: var(--accent); }
+
+  @media (max-width: 768px) {
+    nav { display: none; }
+    .hamburger { display: flex; }
+    .hero { padding: 40px 16px 30px; }
+    .hero-stats { gap: 20px; }
+    .stat-num { font-size: 1.6rem; }
+    .filter-bar { padding: 0 16px; }
+    .search-box input { width: 160px; }
+    .search-box input:focus { width: 200px; }
+    .table-wrap { padding: 0 16px 40px; }
+    .kernel-bar { padding: 10px 16px; }
+    .nav-badge { font-size: 0.6rem; padding: 3px 8px; }
+    .footer-inner { flex-direction: column; text-align: center; }
+    .footer-text { text-align: center; }
+  }
+
+  @keyframes fadeInUp { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: translateY(0); } }
+  .hero, .kernel-bar, .filter-bar, .table-wrap { animation: fadeInUp 0.7s ease both; }
+  .kernel-bar { animation-delay: 0.1s; }
+  .filter-bar { animation-delay: 0.2s; }
+  .table-wrap { animation-delay: 0.3s; }
+  tbody tr { animation: fadeInUp 0.4s ease both; }
+  tbody tr:nth-child(1){animation-delay:.02s} tbody tr:nth-child(2){animation-delay:.04s}
+  tbody tr:nth-child(3){animation-delay:.06s} tbody tr:nth-child(4){animation-delay:.08s}
+  tbody tr:nth-child(5){animation-delay:.10s} tbody tr:nth-child(6){animation-delay:.12s}
+  tbody tr:nth-child(7){animation-delay:.14s} tbody tr:nth-child(8){animation-delay:.16s}
+  tbody tr:nth-child(9){animation-delay:.18s} tbody tr:nth-child(10){animation-delay:.20s}
+  tbody tr:nth-child(11){animation-delay:.22s} tbody tr:nth-child(12){animation-delay:.24s}
+  tbody tr:nth-child(13){animation-delay:.26s} tbody tr:nth-child(14){animation-delay:.28s}
+  tbody tr:nth-child(15){animation-delay:.30s} tbody tr:nth-child(16){animation-delay:.32s}
+  tbody tr:nth-child(17){animation-delay:.34s} tbody tr:nth-child(18){animation-delay:.36s}
+  tbody tr:nth-child(19){animation-delay:.38s} tbody tr:nth-child(20){animation-delay:.40s}
+
+  .no-results { padding: 60px 24px; text-align: center; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; display: none; }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+    html { scroll-behavior: auto; }
+  }
+</style>
+</head>
+<body>
+
+<canvas id="bg-canvas"></canvas>
+
+<div class="content-wrap">
+
+<!-- HEADER -->
+<header>
+  <div class="nav-inner">
+    <a href="#" class="logo">
+      <div class="logo-icon">
+        <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="20" cy="20" r="19" stroke="#00b4ff" stroke-width="1" opacity="0.4"/>
+          <circle cx="20" cy="20" r="13" stroke="#00b4ff" stroke-width="0.5" opacity="0.3"/>
+          <circle cx="20" cy="20" r="5" fill="#00b4ff" opacity="0.9"/>
+          <circle cx="20" cy="5" r="2.5" fill="#7c3aed"/>
+          <circle cx="33" cy="27.5" r="2.5" fill="#10b981"/>
+          <circle cx="7" cy="27.5" r="2.5" fill="#f59e0b"/>
+          <line x1="20" y1="7.5" x2="20" y2="15" stroke="#00b4ff" stroke-width="0.5" opacity="0.5"/>
+          <line x1="31" y1="26" x2="24.5" y2="22.5" stroke="#00b4ff" stroke-width="0.5" opacity="0.5"/>
+          <line x1="9" y1="26" x2="15.5" y2="22.5" stroke="#00b4ff" stroke-width="0.5" opacity="0.5"/>
+        </svg>
+      </div>
+      <div>
+        <div class="logo-text">ILDB</div>
+        <div class="logo-sub">Linux Dağıtımları Açık Veri Haritası</div>
+      </div>
+    </a>
+
+    <nav>
+      <a href="#distros"><i class="bi bi-grid-3x3-gap-fill"></i> Dağıtımlar</a>
+      <a href="#kernel"><i class="bi bi-cpu-fill"></i> Kernel</a>
+      <a href="https://kernel.org" target="_blank" title="Kernel - kernel.org"><i class="bi bi-braces-asterisk"></i> kernel.org</a>
+      <a href="https://mynetiz.com/isletim-sistemleri/" target="_blank" title="MyNetiz - İşletim Sistemleri"><i class="bi bi-binoculars-fill"></i> İşletim Sistemleri</a>
+      <a href="https://pisilinux.org" target="_blank" title="Pisi Linux - pisilinux.org"><i class="bi bi-rss-fill"></i> pisilinux.org</a>
+      <span class="nav-badge" id="live-kernel-badge"><i class="bi bi-arrow-repeat"></i> Yükleniyor...</span>
+    </nav>
+
+    <button class="hamburger" id="hamburger" aria-label="Menü">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+  <div class="mobile-nav" id="mobile-nav">
+    <a href="#distros"><i class="bi bi-grid-3x3-gap-fill"></i> Dağıtımlar</a>
+    <a href="#kernel"><i class="bi bi-cpu-fill"></i> Kernel</a>
+    <a href="https://kernel.org" target="_blank"><i class="bi bi-braces-asterisk"></i> kernel.org ↗</a>
+    <a href="https://distrowatch.com" target="_blank"><i class="bi bi-binoculars-fill"></i> DistroWatch ↗</a>
+    <a href="https://pisilinux.org" target="_blank"><i class="bi bi-rss-fill"></i> pisilinux.org ↗</a>
+  </div>
+</header>
+
+<!-- KERNEL BAR (canlı verilerle dinamik dolar) -->
+<section class="kernel-bar" id="kernel">
+  <div class="kernel-bar-inner">
+    <div>
+      <div class="kernel-title"><span class="material-symbols-outlined" style="font-size:1rem;vertical-align:-3px;margin-right:6px;color:var(--accent);animation:spin 4s linear infinite">settings</span>Linux Çekirdek Durumu</div>
+    </div>
+
+    <div class="kernel-versions" id="kernel-versions"></div>
+
+    <div class="kernel-update">
+      <div class="live-dot"></div>
+      <span id="last-updated">Bağlanıyor...</span>
+      <button class="krefresh" id="krefresh" title="Kernel ve sürüm verilerini şimdi yenile"><i class="bi bi-arrow-clockwise"></i></button>
+    </div>
+  </div>
+</section>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-tag">
+    <div class="live-dot"></div>
+    <i class="fa-brands fa-linux"></i>&nbsp;Aktif &amp; Geliştirilen Dağıtımlar
+  </div>
+  <h1>Linux İşletim Sistemleri</h1>
+  <p>Dünya genelinde aktif olarak geliştirilen Linux işletim sistemlerinin kapsamlı rehberi. Kernel durumu, paket sistemleri, masaüstü ortamları ve son sürüm bilgileri.</p>
+
+  <div class="hero-stats">
+    <div class="stat">
+      <span class="stat-num" id="total-count">—</span>
+      <span class="stat-label"><span class="material-symbols-outlined" style="font-size:0.85rem;vertical-align:-2px;margin-right:3px">deployed_code</span>Aktif Dağıtım</span>
+    </div>
+    <div class="stat">
+      <span class="stat-num">600<span style="font-size:1rem">+</span></span>
+      <span class="stat-label"><span class="material-symbols-outlined" style="font-size:0.85rem;vertical-align:-2px;margin-right:3px">public</span>Toplam Ekosistem</span>
+    </div>
+    <div class="stat">
+      <span class="stat-num" id="kernel-stat">—</span>
+      <span class="stat-label"><span class="material-symbols-outlined" style="font-size:0.85rem;vertical-align:-2px;margin-right:3px">memory</span>Güncel Kernel</span>
+    </div>
+    <div class="stat">
+      <span class="stat-num">1991</span>
+      <span class="stat-label"><span class="material-symbols-outlined" style="font-size:0.85rem;vertical-align:-2px;margin-right:3px">history</span>Başlangıç Yılı</span>
+    </div>
+  </div>
+</section>
+
+<!-- FILTER BAR -->
+<div class="filter-bar" id="distros">
+  <span class="filter-label">Filtre:</span>
+  <div class="filter-btns">
+    <button class="fbtn active" data-filter="all"><i class="bi bi-grid-fill"></i> Tümü</button>
+    <button class="fbtn" data-filter="independent"><i class="bi bi-stars"></i> Bağımsız</button>
+    <button class="fbtn" data-filter="debian"><i class="bi bi-circle-fill"></i> Debian</button>
+    <button class="fbtn" data-filter="arch"><i class="bi bi-shield-fill-check"></i> Arch</button>
+    <button class="fbtn" data-filter="rpm"><i class="bi bi-hexagon-fill"></i> RPM/Fedora</button>
+    <button class="fbtn" data-filter="rhel"><i class="bi bi-building-fill"></i> RHEL</button>
+    <button class="fbtn" data-filter="suse"><i class="bi bi-gem"></i> SUSE</button>
+    <button class="fbtn" data-filter="gentoo"><i class="bi bi-eyedropper"></i> Gentoo</button>
+    <button class="fbtn" data-filter="void"><i class="bi bi-circle-half"></i> Void</button>
+    <button class="fbtn" data-filter="security"><i class="bi bi-incognito"></i> Güvenlik</button>
+    <button class="fbtn" data-filter="embedded"><i class="bi bi-motherboard-fill"></i> Gömülü/Hafif</button>
+    <button class="fbtn" data-filter="media"><i class="bi bi-play-circle-fill"></i> Medya/Oyun</button>
+    <button class="fbtn" data-filter="server"><i class="bi bi-hdd-rack-fill"></i> Sunucu/NAS</button>
+  </div>
+  <div class="search-box">
+    <input type="text" id="search-input" placeholder="Dağıtım ara..." autocomplete="off">
+    <button class="search-clear" id="search-clear" title="Temizle">&times;</button>
+    <span class="search-icon"><i class="bi bi-search"></i></span>
+  </div>
+</div>
+
+<!-- TABLE -->
+<div class="table-wrap">
+  <div class="table-glass">
+    <div class="section-header">
+      <h2><span class="material-symbols-outlined" style="font-size:0.9rem;vertical-align:-2px;margin-right:6px" class="ms-fill">table_chart</span>Linux Dağıtım Tablosu</h2>
+      <div class="section-line"></div>
+      <span class="row-count" id="row-count">yükleniyor…</span>
+    </div>
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th data-sort="name"><span class="material-symbols-outlined ms-fill" style="font-size:0.95rem;margin-right:5px;vertical-align:-3px">deployed_code</span>Dağıtım Adı</th>
+            <th><span class="material-symbols-outlined ms-fill" style="font-size:0.95rem;margin-right:5px;vertical-align:-3px">badge</span>Künye / Tür</th>
+            <th><span class="material-symbols-outlined ms-fill" style="font-size:0.95rem;margin-right:5px;vertical-align:-3px">memory</span>Kernel Durumu</th>
+            <th><span class="material-symbols-outlined ms-fill" style="font-size:0.95rem;margin-right:5px;vertical-align:-3px">desktop_windows</span>Masaüstü (DE)</th>
+            <th><span class="material-symbols-outlined ms-fill" style="font-size:0.95rem;margin-right:5px;vertical-align:-3px">package_2</span>Paket Sistemi</th>
+            <th data-sort="ver"><span class="material-symbols-outlined ms-fill" style="font-size:0.95rem;margin-right:5px;vertical-align:-3px">new_releases</span>Son Sürüm</th>
+            <th data-sort="date"><span class="material-symbols-outlined ms-fill" style="font-size:0.95rem;margin-right:5px;vertical-align:-3px">calendar_month</span>Sürüm Tarihi</th>
+          </tr>
+        </thead>
+        <tbody id="distro-tbody"></tbody>
+      </table>
+    </div>
+    <div class="no-results" id="no-results">// arama veya filtreyle eşleşen dağıtım bulunamadı //</div>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-inner">
+    <div class="footer-text">
+      PiLiDup · Linux Dağıtımları Açık Veri Haritası<br>
+      Kernel verileri kernel.org'dan, dağıtım sürümleri endoflife.date'ten <b>otomatik</b> çekilir · sayfa açıkken ~30 dk'da bir yenilenir · sonuçlar localStorage'da önbelleklenir · tablo künyesi statik anlık görüntüdür.
+    </div>
+    <div class="footer-links">
+      <a href="https://www.kernel.org" target="_blank">kernel.org</a>
+      <a href="https://endoflife.date" target="_blank">endoflife.date</a>
+      <a href="https://distrowatch.com" target="_blank">distrowatch.com</a>
+      <a href="https://pisilinux.org" target="_blank">pisilinux.org</a>
+    </div>
+  </div>
+</footer>
+
+</div><!-- /content-wrap -->
+
+<script>
+/* ═══════════════════════════════════════════════════════════════
+   PiLiDup — veri katmanı + otomatik güncelleme
+   • Kernel:  https://www.kernel.org/releases.json  (canlı, CORS açık)
+   • Sürüm:   https://endoflife.date/api/{ürün}.json (canlı, CORS açık)
+   • Önbellek: localStorage (kernel 6 saat, sürümler 12 saat TTL)
+   • Çevrimdışı: önce eski önbellek, sonra gömülü yerleşik veri
+═══════════════════════════════════════════════════════════════ */
+
+/* ── Gömülü dağıtım verisi (statik anlık görüntü; eol alanı olanlar
+      endoflife.date üzerinden otomatik güncellenir) ── */
+const DISTROS = [
+{n:"Ubuntu",u:"https://ubuntu.com",i:"fa-solid fa-circle",c:"#e95420",f:"type-debian",ft:"Alt-dağıtım · Debian",cats:["debian"],org:"Canonical Ltd.",est:2004,o:"Güney Afrika",k:"6.17 / 6.8 LTS",kn:"Noble LTS: 6.8 + HWE",de:["GNOME","KDE","Xfce"],pkg:["APT/DEB","Snap","Flatpak"],v:"25.10",cn:"Questing Quokka",d:"2025-10-23",eol:"ubuntu"},
+{n:"Debian",u:"https://debian.org",i:"fa-solid fa-circle-half-stroke",c:"#a80030",f:"type-independent",ft:"Bağımsız Dağıtım",cats:["independent"],org:"Debian Project",est:1993,o:"Küresel",k:"6.12 LTS",kn:"Trixie; testing: Forky",de:["GNOME","KDE","Xfce","+8"],pkg:["APT/DEB","Flatpak"],v:"13",cn:"Trixie",d:"2025-08-09",eol:"debian"},
+{n:"Fedora",u:"https://fedoraproject.org",i:"fa-solid fa-infinity",c:"#3c6eb4",f:"type-rpm",ft:"Bağımsız · Red Hat sponsor",cats:["rpm"],org:"Fedora Project",est:2003,o:"ABD",k:"6.17",kn:"Her ~6 ayda yeni sürüm",de:["GNOME","KDE","Xfce","+7"],pkg:["DNF5/RPM","Flatpak"],v:"43",cn:"Workstation 43",d:"2025-10-14",eol:"fedora"},
+{n:"Arch Linux",u:"https://archlinux.org",i:"fa-solid fa-shield-halved",c:"#1793d1",f:"type-independent",ft:"Bağımsız · Rolling",cats:["independent"],org:"Arch Community",est:2002,o:"Küresel",k:"Mainline ile eş",kn:"Rolling Release",de:["KDE","GNOME","Bspwm","+∞"],pkg:["Pacman","AUR","Flatpak"],v:null,cn:"",d:null,roll:true},
+{n:"Linux Mint",u:"https://linuxmint.com",i:"fa-solid fa-leaf",c:"#87cf3e",f:"type-debian",ft:"Alt-dağıtım · Ubuntu/Debian",cats:["debian"],org:"Linux Mint Team",est:2006,o:"İrlanda",k:"6.14 HWE",kn:"Ubuntu 24.04 LTS temeli",de:["Cinnamon","XFCE","MATE"],pkg:["APT/DEB","Flatpak","Snap"],v:"22.2",cn:"Zara",d:"2025-10",eol:"linux-mint"},
+{n:"openSUSE Tumbleweed",u:"https://www.opensuse.org",i:"fa-solid fa-dragon",c:"#73ba25",f:"type-suse",ft:"SUSE Ekosistemi · Rolling",cats:["suse"],org:"openSUSE Project",est:2005,o:"Almanya",k:"Güncel stable",kn:"Rolling · SNAPSHOT",de:["KDE","GNOME","Xfce"],pkg:["Zypper/RPM","Flatpak","Snap"],v:null,cn:"",d:null,roll:true,q:"tumbleweed"},
+{n:"Manjaro",u:"https://manjaro.org",i:"fa-solid fa-cube",c:"#35bf5c",f:"type-arch",ft:"Alt-dağıtım · Arch",cats:["arch"],org:"Manjaro GmbH",est:2011,o:"Avusturya",k:"6.12 LTS",kn:"Çoklu kernel desteği",de:["KDE","GNOME","Xfce"],pkg:["Pacman","AUR","Flatpak","Snap"],v:"25.1",cn:"Xaoma",d:"2025-09"},
+{n:"Pop!_OS",u:"https://pop.system76.com",i:"fa-solid fa-rocket",c:"#5496db",f:"type-debian",ft:"Alt-dağıtım · Ubuntu",cats:["debian"],org:"System76",est:2017,o:"ABD",k:"6.12",kn:"COSMIC masaüstü",de:["COSMIC","GNOME"],pkg:["APT/DEB","Flatpak"],v:"24.04 LTS",cn:"COSMIC",d:"2025-06",q:"popos pop os"},
+{n:"Zorin OS",u:"https://zorin.com/os",i:"fa-solid fa-bolt",c:"#15b9f5",f:"type-debian",ft:"Alt-dağıtım · Ubuntu LTS",cats:["debian"],org:"Zorin Group",est:2009,o:"İrlanda",k:"6.8 LTS",kn:"Ubuntu Noble temeli",de:["GNOME","Xfce (Lite)"],pkg:["APT/DEB","Flatpak","Snap"],v:"17.3",cn:"",d:"2025-09"},
+{n:"elementary OS",u:"https://elementary.io",i:"fa-solid fa-feather",c:"#dd6b20",f:"type-debian",ft:"Alt-dağıtım · Ubuntu LTS",cats:["debian"],org:"Elementary Inc.",est:2011,o:"ABD",k:"6.8 LTS",kn:"Pay-what-you-want modeli",de:["Pantheon"],pkg:["APT/DEB","Flatpak","AppCenter"],v:"8",cn:"Circe",d:"2024-11",q:"elementaryos"},
+{n:"MX Linux",u:"https://mxlinux.org",i:"fa-solid fa-gears",c:"#7dd3fc",f:"type-debian",ft:"Alt-dağıtım · Debian Stable",cats:["debian"],org:"MX Linux Team",est:2014,o:"Küresel",k:"6.1 LTS",kn:"antiX çekirdeği",de:["Xfce","KDE","Fluxbox"],pkg:["APT/DEB","Flatpak","AppImage"],v:"23.5",cn:"Libretto",d:"2025-01"},
+{n:"LMDE",u:"https://linuxmint.com/download_lmde.php",i:"fa-solid fa-seedling",c:"#77c159",f:"type-debian",ft:"Alt-dağıtım · Debian (doğrudan)",cats:["debian"],org:"Linux Mint Team",est:2014,o:"İrlanda",k:"6.1 LTS",kn:"Ubuntu'suz Mint",de:["Cinnamon"],pkg:["APT/DEB","Flatpak"],v:"6",cn:"Faye",d:"2023-10"},
+{n:"KDE neon",u:"https://neon.kde.org",i:"fa-solid fa-layer-group",c:"#1d99f3",f:"type-debian",ft:"Alt-dağıtım · Ubuntu LTS",cats:["debian"],org:"KDE e.V.",est:2016,o:"Almanya",k:"Ubuntu LTS kerneli",kn:"Son KDE Plasma anlık",de:["KDE Plasma"],pkg:["APT/DEB","Flatpak","Snap"],v:null,cn:"",d:null,roll:true},
+{n:"Kali Linux",u:"https://kali.org",i:"fa-solid fa-skull-crossbones",c:"#367bf0",f:"type-debian",ft:"Alt-dağıtım · Debian Testing",cats:["debian","security"],org:"Offensive Security",est:2013,o:"ABD",k:"6.12 LTS",kn:"Rolling · pentest odaklı",de:["Xfce","GNOME","KDE"],pkg:["APT/DEB","Flatpak"],v:"2025.3",cn:"Rolling",d:"2025-09"},
+{n:"Tails",u:"https://tails.boum.org",i:"fa-solid fa-user-secret",c:"#a78bfa",f:"type-debian",ft:"Alt-dağıtım · Debian",cats:["debian","security"],org:"Tails Project",est:2009,o:"Küresel",k:"6.12 LTS",kn:"Tor odaklı · Live",de:["GNOME"],pkg:["APT/DEB"],v:"7.5",cn:"Live sistem",d:"2025-05"},
+{n:"Parrot Security",u:"https://parrotsec.org",i:"fa-solid fa-dove",c:"#45d0b8",f:"type-debian",ft:"Alt-dağıtım · Debian",cats:["debian","security"],org:"Frozenbox Team",est:2013,o:"İtalya",k:"6.1",kn:"Pentest + gizlilik",de:["MATE"],pkg:["APT/DEB"],v:"6.3",cn:"",d:"2025-02"},
+{n:"Whonix",u:"https://whonix.org",i:"fa-solid fa-user-shield",c:"#a48ad4",f:"type-debian",ft:"Alt-dağıtım · Debian",cats:["debian","security"],org:"Whonix Project",est:2012,o:"Küresel",k:"6.1",kn:"Tor · VM izolasyonu",de:["KDE","Xfce"],pkg:["APT/DEB"],v:"17",cn:"",d:"2024-06"},
+{n:"Qubes OS",u:"https://qubes-os.org",i:"fa-solid fa-cubes",c:"#4aa3ff",f:"type-independent",ft:"Bağımsız · Xen hipervizör",cats:["independent","security"],org:"Invisible Things Lab",est:2012,o:"ABD",k:"VM başına değişir",kn:"Güvenlik by izolasyon",de:["KDE","Xfce"],pkg:["RPM/DNF"],v:"4.2",cn:"",d:"2023-12"},
+{n:"NixOS",u:"https://nixos.org",i:"fa-solid fa-snowflake",c:"#7dd3fc",f:"type-independent",ft:"Bağımsız · Declarative",cats:["independent"],org:"NixOS Community",est:2003,o:"Hollanda",k:"6.12 LTS",kn:"Stable / Unstable kanal",de:["KDE","GNOME","Hyprland"],pkg:["Nix"],v:"25.05",cn:"Warbler",d:"2025-05",q:"nix"},
+{n:"Gentoo",u:"https://gentoo.org",i:"fa-solid fa-flask",c:"#facc15",f:"type-gentoo",ft:"Kaynak tabanlı · Gentoo",cats:["gentoo"],org:"Gentoo Foundation",est:2000,o:"ABD",k:"Seçimli (kaynak)",kn:"Rolling · source-based",de:["KDE","GNOME","Sway","+∞"],pkg:["Portage/emerge","Flatpak"],v:null,cn:"",d:null,roll:true},
+{n:"Calculate Linux",u:"https://calculate-linux.org",i:"fa-solid fa-square-root-variable",c:"#a78bfa",f:"type-gentoo",ft:"Kaynak tabanlı · Gentoo",cats:["gentoo"],org:"Calculate Ltd.",est:2007,o:"Rusya",k:"6.x seçimli",kn:"Gentoo tabanlı, hazır ikili",de:["KDE","GNOME","Xfce","MATE"],pkg:["emerge/cl-update"],v:null,cn:"",d:null,roll:true},
+{n:"Void Linux",u:"https://voidlinux.org",i:"fa-solid fa-circle-half",c:"#7aa2f7",f:"type-independent",ft:"Bağımsız · Rolling",cats:["void","independent"],org:"Void Community",est:2008,o:"Küresel",k:"6.x güncel",kn:"runit init · XBPS",de:["KDE","GNOME","Xfce"],pkg:["XBPS"],v:null,cn:"",d:null,roll:true},
+{n:"Alpine Linux",u:"https://alpinelinux.org",i:"fa-solid fa-mountain-sun",c:"#0d597f",f:"type-independent",ft:"Bağımsız · musl/busybox",cats:["independent","embedded"],org:"Alpine Team",est:2005,o:"Küresel",k:"LTS seçimli",kn:"musl + busybox · küçük",de:["Xfce","i3wm","KDE"],pkg:["APK"],v:"3.22",cn:"",d:"2025-05",eol:"alpine-linux"},
+{n:"Slackware",u:"https://slackware.com",i:"fa-solid fa-code",c:"#3c6ea5",f:"type-independent",ft:"Bağımsız · En eski yaşayan",cats:["independent"],org:"Patrick Volkerding",est:1993,o:"ABD",k:"5.15 LTS",kn:"-current dalı sürekli",de:["KDE","Xfce"],pkg:["slackpkg/TGZ"],v:"15.0",cn:"",d:"2022-02"},
+{n:"GNU Guix System",u:"https://guix.gnu.org",i:"fa-brands fa-gnu",c:"#d97706",f:"type-independent",ft:"Bağımsız · Declarative",cats:["independent"],org:"GNU Projesi",est:2012,o:"Küresel",k:"Seçimli",kn:"Shepherd init · Scheme",de:["GNOME","Xfce","i3wm"],pkg:["Guix"],v:null,cn:"",d:null,roll:true,q:"guixsd"},
+{n:"Clear Linux",u:"https://clearlinux.org",i:"fa-solid fa-bolt-lightning",c:"#0071c5",f:"type-independent",ft:"Bağımsız · Intel",cats:["independent"],org:"Intel",est:2015,o:"ABD",k:"Güncel",kn:"Performance-tuned · swupd",de:["GNOME","KDE"],pkg:["swupd"],v:null,cn:"",d:null,roll:true},
+{n:"Linux From Scratch",u:"https://linuxfromscratch.org",i:"fa-solid fa-book",c:"#94a3b8",f:"type-lfs",ft:"Kaynak Kodu · LFS",cats:["independent"],org:"LFS Projesi",est:1999,o:"Küresel",k:"Kitapla derlenir",kn:"Sıfırdan kaynak derleme",de:["Kendi tercihin"],pkg:["Kaynak kodu"],v:"12.3",cn:"",d:"2025-03",q:"lfs"},
+{n:"CachyOS",u:"https://cachyos.org",i:"fa-solid fa-bolt",c:"#0ea5e9",f:"type-arch",ft:"Alt-dağıtım · Arch",cats:["arch"],org:"CachyOS Team",est:2021,o:"Küresel",k:"Güncel + cachy",kn:"BORE/EEVDF · x86-64-v3",de:["KDE","GNOME","Hyprland"],pkg:["Pacman","AUR","Flatpak"],v:null,cn:"",d:null,roll:true,q:"cachy"},
+{n:"EndeavourOS",u:"https://endeavouros.com",i:"fa-solid fa-binoculars",c:"#7b5ea7",f:"type-arch",ft:"Alt-dağıtım · Arch",cats:["arch"],org:"EndeavourOS Team",est:2019,o:"Hollanda",k:"Güncel (rolling)",kn:"Arch'ı kurulumlaştırır",de:["KDE","GNOME","Xfce","+7"],pkg:["Pacman","AUR","Flatpak"],v:"Gemini 2025.09",cn:"Rolling anlık görüntü",d:"2025-09",q:"endeavour"},
+{n:"Garuda Linux",u:"https://garudalinux.org",i:"fa-solid fa-dragon",c:"#7c3aed",f:"type-arch",ft:"Alt-dağıtım · Arch",cats:["arch","media"],org:"Garuda Team",est:2020,o:"Küresel",k:"Güncel (zen)",kn:"Dragonized gaming düzeni",de:["KDE","GNOME","Hyprland"],pkg:["Pacman","AUR","Flatpak"],v:null,cn:"",d:null,roll:true},
+{n:"SteamOS 3",u:"https://store.steampowered.com/steamdeck",i:"fa-brands fa-steam",c:"#66c0f4",f:"type-arch",ft:"Alt-dağıtım · Arch (Valve)",cats:["arch","media"],org:"Valve",est:2013,o:"ABD",k:"6.1 LTS (Valve)",kn:"Immutable · Steam Deck",de:["KDE Plasma"],pkg:["Pacman","Flatpak"],v:"3.7",cn:"Holo",d:"2025-06"},
+{n:"Artix Linux",u:"https://artixlinux.org",i:"fa-solid fa-atom",c:"#12d1c3",f:"type-arch",ft:"Alt-dağıtım · Arch",cats:["arch"],org:"Artix Team",est:2019,o:"Küresel",k:"Güncel",kn:"systemd yok (runit/openrc/s6/dinit)",de:["KDE","GNOME","Xfce","+6"],pkg:["Pacman","AUR"],v:null,cn:"",d:null,roll:true},
+{n:"BlackArch",u:"https://blackarch.org",i:"fa-solid fa-user-ninja",c:"#60a5fa",f:"type-arch",ft:"Alt-dağıtım · Arch",cats:["arch","security"],org:"BlackArch Team",est:2014,o:"Küresel",k:"Güncel",kn:"~2800 pentest aracı",de:["i3wm","Xfce","KDE"],pkg:["Pacman","AUR (blackarch)"],v:null,cn:"",d:null,roll:true},
+{n:"Rocky Linux",u:"https://rockylinux.org",i:"fa-solid fa-mountain",c:"#10b981",f:"type-rhel",ft:"Alt-dağıtım · RHEL klonu",cats:["rhel"],org:"Rocky Enterprise SW Fdn",est:2021,o:"ABD",k:"6.14 (RHEL 10)",kn:"1:1 RHEL uyumlu",de:["GNOME"],pkg:["DNF/RPM","Flatpak"],v:"10.0",cn:"Red Quartz",d:"2025-07",eol:"rocky-linux"},
+{n:"AlmaLinux",u:"https://almalinux.org",i:"fa-solid fa-sun",c:"#f59e0b",f:"type-rhel",ft:"Alt-dağıtım · RHEL uyumlu",cats:["rhel"],org:"AlmaLinux OS Fdn",est:2021,o:"ABD",k:"6.14 (RHEL 10)",kn:"CloudLinux kökenli",de:["GNOME"],pkg:["DNF/RPM","Flatpak"],v:"10.0",cn:"Purple Lion",d:"2025-06",eol:"almalinux"},
+{n:"CentOS Stream",u:"https://centos.org",i:"fa-solid fa-diagram-project",c:"#9ccd2a",f:"type-rhel",ft:"RHEL üst-akışı (upstream)",cats:["rhel"],org:"Red Hat",est:2020,o:"ABD",k:"6.12+",kn:"RHEL'in önizleme dalı",de:["GNOME"],pkg:["DNF/RPM","Flatpak"],v:"10",cn:"Stream",d:"2024-12",eol:"centos"},
+{n:"Oracle Linux",u:"https://oracle.com/linux",i:"fa-brands fa-oracle",c:"#c74634",f:"type-rhel",ft:"Alt-dağıtım · RHEL klonu",cats:["rhel"],org:"Oracle",est:2006,o:"ABD",k:"RHCK 6.14 / UEK",kn:"UEK kernel seçeneği",de:["GNOME"],pkg:["DNF/RPM","Flatpak"],v:"10.0",cn:"",d:"2025-06",eol:"oracle-linux"},
+{n:"openSUSE Leap",u:"https://www.opensuse.org",i:"fa-solid fa-stairs",c:"#6ab517",f:"type-suse",ft:"SUSE Ekosistemi · Point",cats:["suse"],org:"openSUSE Project",est:2015,o:"Almanya",k:"6.14",kn:"SLE 16 ortak temel",de:["KDE","GNOME"],pkg:["Zypper/RPM","Flatpak"],v:"16.0",cn:"",d:"2025-10",eol:"opensuse",q:"leap"},
+{n:"Nobara Project",u:"https://nobaraproject.org",i:"fa-solid fa-gamepad",c:"#f472b6",f:"type-rpm",ft:"Alt-dağıtım · Fedora",cats:["rpm","media"],org:"GloriousEggroll",est:2019,o:"ABD",k:"Fedora + oyun yamaları",kn:"Proton/OBS/gamepad hazır",de:["KDE","GNOME (özel)"],pkg:["DNF/RPM","Flatpak"],v:"42",cn:"",d:"2025-06"},
+{n:"deepin",u:"https://deepin.org",i:"fa-solid fa-droplet",c:"#0091ff",f:"type-debian",ft:"Alt-dağıtım · Debian",cats:["debian"],org:"Wuhan Deepin Tech.",est:2004,o:"Çin",k:"6.12",kn:"DDE masaüstü",de:["DDE"],pkg:["APT/DEB","Flatpak"],v:"25",cn:"",d:"2025-08"},
+{n:"Ubuntu Studio",u:"https://ubuntustudio.org",i:"fa-solid fa-music",c:"#f9a13f",f:"type-debian",ft:"Alt-dağıtım · Ubuntu",cats:["debian","media"],org:"Ubuntu Studio Team",est:2007,o:"Küresel",k:"6.17 lowlatency",kn:"Ses/görüntü üretimi",de:["KDE Plasma"],pkg:["APT/DEB","Flatpak"],v:"25.10",cn:"",d:"2025-10"},
+{n:"Raspberry Pi OS",u:"https://raspberrypi.com/software",i:"fa-brands fa-raspberry-pi",c:"#c51ad4",f:"type-debian",ft:"Alt-dağıtım · Debian",cats:["debian","embedded"],org:"Raspberry Pi Fdn",est:2012,o:"İngiltere",k:"Debian LTS kerneli",kn:"32/64-bit · PIXEL",de:["PIXEL (LXDE)"],pkg:["APT/DEB"],v:null,cn:"",d:null,roll:true,q:"raspbian rpi"},
+{n:"antiX",u:"https://antixlinux.com",i:"fa-solid fa-feather-pointed",c:"#7cb342",f:"type-debian",ft:"Alt-dağıtım · Debian",cats:["debian","embedded"],org:"antiX Team",est:2007,o:"Küresel",k:"6.1 LTS",kn:"systemd yok · çok hafif",de:["IceWM","Fluxbox","JWM"],pkg:["APT/DEB"],v:"23.3",cn:"",d:"2025-01"},
+{n:"Puppy Linux",u:"https://puppylinux.org",i:"fa-solid fa-dog",c:"#fb923c",f:"type-independent",ft:"Bağımsız · Live ultra-hafif",cats:["independent","embedded"],org:"B. Kauler & topluluk",est:2003,o:"Avustralya",k:"Debian Bookworm",kn:"RAM'den çalışır (~300MB)",de:["JWM","Openbox"],pkg:["PET","APT/DEB"],v:"10.0.10",cn:"BookwormPup64",d:"2024-08"},
+{n:"Tiny Core Linux",u:"http://tinycorelinux.net",i:"fa-solid fa-microchip",c:"#67e8f9",f:"type-independent",ft:"Bağımsız · Ultra-minimal",cats:["independent","embedded"],org:"R. Shingledecker",est:2008,o:"ABD",k:"6.6",kn:"11-92 MB imaj!",de:["FLTK/FLWM"],pkg:["TCZ"],v:"15.0",cn:"",d:"2024-06",q:"core"},
+{n:"Pardus",u:"https://pardus.org.tr",i:"fa-solid fa-paw",c:"#fbbf24",f:"type-debian",ft:"Alt-dağıtım · Debian",cats:["debian"],org:"TÜBİTAK / Pardus",est:2003,o:"Türkiye",k:"6.1 LTS",kn:"Kamu odaklı Türk dağıtımı",de:["GNOME","Xfce"],pkg:["APT/DEB","Flatpak"],v:"23.05",cn:"",d:"2024-06"},
+{n:"Pisi Linux",u:"https://pisilinux.org",i:"fa-solid fa-fish",c:"#22d3ee",f:"type-independent",ft:"Bağımsız · Pardus kökeni",cats:["independent"],org:"Pisi Linux Topluluğu",est:2013,o:"Türkiye",k:"6.1 LTS",kn:"PISI paket yöneticisi",de:["KDE","Xfce"],pkg:["PISI"],v:"2.2",cn:"",d:"2023-11",q:"pisi"},
+{n:"Proxmox VE",u:"https://proxmox.com",i:"fa-solid fa-server",c:"#e57000",f:"type-debian",ft:"Sunucu · Debian temelli",cats:["debian","server"],org:"Proxmox Srv. Solutions",est:2008,o:"Avusturya",k:"6.12 LTS",kn:"KVM + LXC · küme/HA",de:["Web GUI"],pkg:["APT/DEB"],v:"9.0",cn:"",d:"2025-08"},
+{n:"TrueNAS SCALE",u:"https://truenas.com",i:"fa-solid fa-database",c:"#38bdf8",f:"type-debian",ft:"Sunucu/NAS · Debian",cats:["debian","server"],org:"iXsystems",est:2011,o:"ABD",k:"6.12 LTS",kn:"ZFS · Kubernetes Apps",de:["Web GUI"],pkg:["APT/DEB"],v:"25.04",cn:"Fangtooth",d:"2025-04"},
+{n:"openMediaVault",u:"https://openmediavault.org",i:"fa-solid fa-hard-drive",c:"#2dd4bf",f:"type-debian",ft:"Sunucu/NAS · Debian",cats:["debian","server"],org:"OMV Project",est:2009,o:"Almanya",k:"6.1 LTS",kn:"SMB/NFS · eklenti sistemi",de:["Web GUI"],pkg:["APT/DEB"],v:"7",cn:"Sandworm",d:"2023-09",q:"omv"}
+];
+
+/* ── Yardımcılar ── */
+const $ = s => document.querySelector(s);
+const MONTHS = ["Oca","Şub","Mar","Nis","May","Haz","Tem","Ağu","Eyl","Eki","Kas","Ara"];
+function fmtDate(iso){ if(!iso) return "—"; const p = iso.split("-").map(Number); if(!p[1]) return String(p[0]); return p[2] ? `${p[2]} ${MONTHS[p[1]-1]} ${p[0]}` : `${MONTHS[p[1]-1]} ${p[0]}`; }
+function ts(iso){ if(!iso) return 0; const p = iso.split("-").map(Number); return Date.UTC(p[0], (p[1]||1)-1, p[2]||1); }
+function daysAgo(t){ return Math.max(0, Math.floor((Date.now()-t)/86400000)); }
+function verCmp(a,b){ const pa=String(a).split(/[.\-]/).map(s=>parseInt(s)||0), pb=String(b).split(/[.\-]/).map(s=>parseInt(s)||0); for(let i=0;i<Math.max(pa.length,pb.length);i++){ const x=pa[i]||0, y=pb[i]||0; if(x!==y) return x-y; } return 0; }
+async function fetchJSON(url){ const r = await fetch(url,{cache:"no-store"}); if(!r.ok) throw new Error(r.status); return r.json(); }
+function cacheGetRaw(k){ try{ return JSON.parse(localStorage.getItem(k)); }catch(e){ return null; } }
+function cacheGet(k,ttl){ const v=cacheGetRaw(k); return (v && Date.now()-v.t < ttl) ? v.d : null; }
+function cacheStale(k){ const v=cacheGetRaw(k); return v ? v.d : null; }
+function cacheSet(k,d){ try{ localStorage.setItem(k, JSON.stringify({t:Date.now(), d})); }catch(e){} }
+
+/* ── Durum ── */
+const state = { filter:"all", search:"", sortKey:"", sortDir:1 };
+DISTROS.forEach(d => { d._ts = ts(d.d); d._v0 = d.v; });
+
+/* ── Tablo render ── */
+function freshBadge(t){
+  const g = daysAgo(t);
+  if (g <= 200) return `<span class="fresh fresh-ok" title="${g} gün önce yayımlandı">Güncel</span>`;
+  if (g <= 380) return `<span class="fresh fresh-mid" title="${g} gün önce yayımlandı">Orta</span>`;
+  return `<span class="fresh fresh-old" title="${g} gün önce yayımlandı">Eski</span>`;
+}
+function rowHTML(d){
+  const fresh = d.roll ? `<span class="fresh fresh-roll">Sürekli</span>` : freshBadge(d._ts);
+  const verCell = d.roll
+    ? `<span class="rolling">Rolling Release</span>`
+    : `<span class="version-num">${d.auto?'<span class="auto-dot" title="endoflife.date canlı verisiyle otomatik güncellendi"></span>':''}${d.v||"—"}</span>` + (d.cn?`<span class="version-name">${d.cn}</span>`:"");
+  const dateCell = d.roll
+    ? `<span class="date-cell">Sürekli</span>${fresh}`
+    : `<span class="date-cell">${fmtDate(d.d)}</span><span class="days-ago">${daysAgo(d._ts)} gün önce</span>${fresh}`;
+  return `<tr>
+  <td><div class="distro-cell">
+    <div class="distro-icon"><i class="${d.i}" style="color:${d.c}"></i></div>
+    <div>
+      <span class="distro-name"><a href="${d.u}" target="_blank" rel="noopener">${d.n}</a></span>
+      <span class="distro-type ${d.f}">${d.ft}</span>
+    </div>
+  </div></td>
+  <td><div><span class="tag tag-de">${d.org}</span><span class="cell-sub">${d.est} · ${d.o}</span></div></td>
+  <td><span class="tag-kernel">${d.k}</span>${d.kn?`<span class="cell-sub">${d.kn}</span>`:""}</td>
+  <td>${d.de.map(x=>`<span class="tag tag-de">${x}</span>`).join("")}</td>
+  <td>${d.pkg.map(x=>`<span class="tag tag-pkg">${x}</span>`).join("")}</td>
+  <td>${verCell}</td>
+  <td>${dateCell}</td>
+</tr>`;
+}
+function visible(){
+  let L = DISTROS.filter(d =>
+    (state.filter === "all" || d.cats.includes(state.filter)) &&
+    (!state.search || (d.n + " " + (d.q||"")).toLowerCase().includes(state.search))
+  );
+  if (state.sortKey === "name") L.sort((a,b)=>a.n.localeCompare(b.n,"tr")*state.sortDir);
+  if (state.sortKey === "date") L.sort((a,b)=>((b._ts||0)-(a._ts||0))*state.sortDir);
+  if (state.sortKey === "ver")  L.sort((a,b)=>{ if(a.roll!==b.roll) return a.roll?1:-1; return verCmp(b.v||"0",a.v||"0")*state.sortDir; });
+  return L;
+}
+function render(){
+  const L = visible();
+  $("#distro-tbody").innerHTML = L.map(rowHTML).join("");
+  $("#row-count").textContent = `${L.length} / ${DISTROS.length} dağıtım`;
+  $("#no-results").style.display = L.length ? "none" : "block";
+}
+
+/* ── Kernel: kernel.org canlı + önbellek + yerleşik yedek ── */
+const K_FALLBACK = { releases:[
+  {moniker:"stable",   version:"6.12 LTS", date:""},
+  {moniker:"mainline", version:"—",        date:""},
+  {moniker:"longterm", version:"6.12 LTS", date:""},
+  {moniker:"longterm", version:"6.6 LTS",  date:""}
+]};
+function kchip(cls,label,ver,date,violet){
+  const dot = violet ? ' style="background:#a78bfa;box-shadow:0 0 6px #a78bfa"' : "";
+  const box = violet ? ' style="border-color:rgba(124,58,237,.4)"' : "";
+  return `<div class="kv ${cls}"${box}><div class="kv-dot"${dot}></div><div><div class="kv-label">${label}</div><div class="kv-ver">${ver}</div></div><div class="kv-date">${date}</div></div>`;
+}
+let kBusy = false;
+function setLast(src){ $("#last-updated").textContent = `${src} · ${new Date().toLocaleTimeString("tr-TR",{hour:"2-digit",minute:"2-digit"})}`; }
+async function updateKernel(force){
+  if (kBusy) return; kBusy = true;
+  const btn = $("#krefresh"); btn.classList.add("spinning");
+  let data = null, src = "canlı · kernel.org";
+  if (!force){ const c = cacheGet("pilidup-kernel", 6*36e5); if (c){ data = c; src = "önbellek"; } }
+  if (!data){
+    try { data = await fetchJSON("https://www.kernel.org/releases.json"); cacheSet("pilidup-kernel", data); }
+    catch(e){
+      data = cacheStale("pilidup-kernel"); src = "önbellek (eski)";
+      if (!data){ data = K_FALLBACK; src = "yerel veri · çevrimdışı"; }
+    }
+  }
+  const rel = (data && data.releases) || [];
+  const mainline = rel.find(r=>r.moniker==="mainline");
+  const stable   = rel.find(r=>r.moniker==="stable") || rel.find(r=>r.moniker==="latest");
+  const lts      = rel.filter(r=>r.moniker==="longterm").sort((a,b)=>verCmp(b.version,a.version)).slice(0,3);
+  let h = "";
+  if (stable)   h += kchip("stable","STABLE", stable.version, stable.date ? fmtDate(stable.date) : "");
+  if (mainline) h += kchip("mainline","MAINLINE", mainline.version, mainline.date ? fmtDate(mainline.date) : "Geliştirme");
+  lts.forEach((r,i)=>{ h += kchip("lts","LTS", r.version, r.date ? fmtDate(r.date) : "", i>0); });
+  $("#kernel-versions").innerHTML = h || `<div class="kv stable"><div class="kv-dot"></div><div><div class="kv-label">STABLE</div><div class="kv-ver">—</div></div></div>`;
+  const sv = stable ? stable.version : "—";
+  $("#kernel-stat").textContent = sv;
+  $("#live-kernel-badge").innerHTML = `<i class="bi bi-arrow-repeat"></i> ${sv}`;
+  setLast(src);
+  btn.classList.remove("spinning"); kBusy = false;
+}
+
+/* ── Dağıtım sürümleri: endoflife.date canlı sorgu ── */
+const EOLMAP = {};
+function applyEol(d, arr){
+  try{
+    const cand = arr.filter(e=>e && !e.isEol && /^\d/.test(String(e.cycle||"")));
+    if (!cand.length) return false;
+    cand.sort((a,b)=>verCmp(String(b.cycle), String(a.cycle)));
+    const e = cand[0];
+    const nv = String(e.latest || e.cycle);
+    if (verCmp(nv, d.v||"0") < 0) return false;
+    const changed = nv !== d.v;
+    d.v = nv; d.auto = true;
+    if (nv !== d._v0) d.cn = "";              // kod adı artık eşleşmiyorsa gizle
+    const nd = String(e.latestReleaseDate || e.releaseDate || "").slice(0,10);
+    if (/^\d{4}-\d{2}/.test(nd)){ d.d = nd; d._ts = ts(nd); }
+    return changed;
+  }catch(x){ return false; }
+}
+async function loadEol(force){
+  const slugs = [...new Set(DISTROS.filter(d=>d.eol).map(d=>d.eol))];
+  await Promise.all(slugs.map(async s=>{
+    let d = force ? null : cacheGet("pilidup-eol-"+s, 12*36e5);
+    if (!d){
+      try { d = await fetchJSON("https://endoflife.date/api/"+s+".json"); cacheSet("pilidup-eol-"+s, d); }
+      catch(e){ d = null; }                   // 404 / çevrimdışı → statik veride kal
+    }
+    EOLMAP[s] = d;
+  }));
+  let changed = 0;
+  DISTROS.forEach(d=>{ if (d.eol && EOLMAP[d.eol] && applyEol(d, EOLMAP[d.eol])) changed++; });
+  if (changed) render();
+}
+
+/* ── Etkileşim ── */
+const fbtns = document.querySelectorAll(".fbtn");
+fbtns.forEach(b=>b.addEventListener("click",()=>{
+  fbtns.forEach(x=>x.classList.remove("active")); b.classList.add("active");
+  state.filter = b.dataset.filter; render();
+}));
+const si = $("#search-input"), sc = $("#search-clear");
+si.addEventListener("input",()=>{ state.search = si.value.trim().toLowerCase(); sc.style.display = si.value ? "block" : "none"; render(); });
+si.addEventListener("keydown",e=>{ if(e.key==="Escape"){ si.value=""; state.search=""; sc.style.display="none"; render(); } });
+sc.addEventListener("click",()=>{ si.value=""; state.search=""; sc.style.display="none"; si.focus(); render(); });
+document.querySelectorAll("th[data-sort]").forEach(th=>{
+  th.classList.add("sortable");
+  th.addEventListener("click",()=>{
+    const k = th.dataset.sort;
+    if (state.sortKey === k) state.sortDir *= -1;
+    else { state.sortKey = k; state.sortDir = (k === "name") ? 1 : -1; }
+    document.querySelectorAll("th[data-sort]").forEach(t=>t.classList.remove("sorted-asc","sorted-desc"));
+    th.classList.add(state.sortDir === 1 ? "sorted-asc" : "sorted-desc");
+    render();
+  });
+});
+const hb = $("#hamburger"), mn = $("#mobile-nav");
+hb.addEventListener("click",()=>mn.classList.toggle("open"));
+mn.querySelectorAll("a").forEach(a=>a.addEventListener("click",()=>mn.classList.remove("open")));
+ $("#krefresh").addEventListener("click", async ()=>{
+  $("#krefresh").classList.add("spinning");
+  await updateKernel(true); await loadEol(true);
+  $("#krefresh").classList.remove("spinning");
+});
+
+/* ── Arka plan canvas (ağ animasyonu) ── */
+(function(){
+  const cv = document.getElementById("bg-canvas"), ctx = cv.getContext("2d");
+  const COLORS = ["0,180,255","124,58,237","16,185,129","245,158,11"];
+  let W,H; const P = []; const M = {x:-1e4, y:-1e4};
+  function rs(){ W = cv.width = innerWidth; H = cv.height = innerHeight; }
+  addEventListener("resize", rs); rs();
+  const n = Math.min(90, Math.round(innerWidth/18));
+  for (let i=0;i<n;i++) P.push({ x:Math.random()*W, y:Math.random()*H, vx:(Math.random()-.5)*.35, vy:(Math.random()-.5)*.35, r:Math.random()*1.6+.6, c:COLORS[i%COLORS.length], a:Math.random()*.5+.2 });
+  addEventListener("pointermove", e=>{ M.x=e.clientX; M.y=e.clientY; });
+  const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  let rafId = null;
+  function draw(){
+    ctx.clearRect(0,0,W,H);
+    for (let i=0;i<P.length;i++){
+      const p = P[i];
+      p.x += p.vx; p.y += p.vy;
+      if (p.x<0||p.x>W) p.vx*=-1; if (p.y<0||p.y>H) p.vy*=-1;
+      ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,7); ctx.fillStyle=`rgba(${p.c},${p.a})`; ctx.fill();
+      const mdx=p.x-M.x, mdy=p.y-M.y, md2=mdx*mdx+mdy*mdy;
+      if (md2 < 22500){ ctx.strokeStyle=`rgba(0,180,255,${(1-md2/22500)*.25})`; ctx.lineWidth=.7; ctx.beginPath(); ctx.moveTo(p.x,p.y); ctx.lineTo(M.x,M.y); ctx.stroke(); }
+      for (let j=i+1;j<P.length;j++){
+        const q=P[j], dx=p.x-q.x, dy=p.y-q.y, d2=dx*dx+dy*dy;
+        if (d2<16000){ ctx.strokeStyle=`rgba(0,180,255,${(1-d2/16000)*.14})`; ctx.lineWidth=.6; ctx.beginPath(); ctx.moveTo(p.x,p.y); ctx.lineTo(q.x,q.y); ctx.stroke(); }
+      }
+    }
+  }
+  function tick(){ draw(); rafId = requestAnimationFrame(tick); }
+  function start(){ if (rafId===null && !reduced) tick(); }
+  function stop(){ if (rafId!==null){ cancelAnimationFrame(rafId); rafId=null; } }
+  document.addEventListener("visibilitychange", ()=>document.hidden?stop():start());
+  start(); if (reduced) draw();
+})();
+
+/* ── Başlat ── */
+ $("#total-count").textContent = DISTROS.length;
+render();
+updateKernel(false);
+loadEol(false);
+setInterval(()=>{ updateKernel(true); loadEol(true); }, 30*60*1000);   // 30 dk'da bir otomatik yenile
+setInterval(()=>{ if (!kBusy) setLast(""); }, 60*1000);                // saat göstergesi
+</script>
+</body>
+</html>
