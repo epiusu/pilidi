@@ -1,6 +1,6 @@
-# 🗺️ Pilidup – Linux Açık Veri Haritası
+# 🗺️ ILDB – Linux Açık Veri Haritası
 
-**Pilidup**, Linux dağıtımları hakkında açık verileri bir araya getirip görsel bir harita üzerinde sunmayı amaçlayan, kişisel bir yan projedir. Vakit buldukça güncellenen, tamamen HTML tabanlı basit bir uygulamadır.
+**ILDB**, Linux dağıtımları hakkında açık verileri bir araya getirip görsel bir harita üzerinde sunmayı amaçlayan, kişisel bir yan projedir. Vakit buldukça güncellenen, tamamen HTML tabanlı basit bir uygulamadır.
 
 > “Linux dağıtımlar dünyasında yönünüzü kaybetmeyin.”
 
@@ -20,13 +20,13 @@ Projeyi kendi bilgisayarında çalıştırmak için:
 
 1.  Depoyu klonla:
     ```bash
-    git clone https://github.com/epiusu/pilidup.git
+    git clone https://github.com/epiusu/ildbup.git
 <img src="https://raw.githubusercontent.com/epiusu/pilidup/refs/heads/main/screen08052026.gif" alt="img" class="responsive">
 
 ## Lisans
 
-Bu proje MIT lisansı altında lisanslanmıştır. Dilediğiniz gibi kullanabilirsiniz. Detaylar için <a href="https://github.com/epiusu/pilidup/blob/main/LICENSE.md">LICENSE</a> dosyasına bakınız.
+Dilediğiniz gibi kullanabilirsiniz. 
 
 ## Bilgi
 
-Bu html sayfa Claude sanal zeka tarafından yaptırılmıştır.
+Bu .html sayfa "sanal zeka" tarafından yaptırılmıştır.
